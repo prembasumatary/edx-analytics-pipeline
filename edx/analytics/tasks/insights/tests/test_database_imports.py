@@ -28,14 +28,14 @@ class ImportStudentCourseEnrollmentTestCase(TestCase):
         expected_query = textwrap.dedent(
             """
             USE default;
-            DROP TABLE IF EXISTS student_courseenrollment;
-            CREATE EXTERNAL TABLE student_courseenrollment (
-                id INT,user_id INT,course_id STRING,created TIMESTAMP,is_active BOOLEAN,mode STRING
+            DROP TABLE IF EXISTS `student_courseenrollment`;
+            CREATE EXTERNAL TABLE `student_courseenrollment` (
+                `id` INT,`user_id` INT,`course_id` STRING,`created` TIMESTAMP,`is_active` BOOLEAN,`mode` STRING
             )
             PARTITIONED BY (dt STRING)
 
             LOCATION 's3://foo/bar/student_courseenrollment';
-            ALTER TABLE student_courseenrollment ADD PARTITION (dt = '2014-07-01');
+            ALTER TABLE `student_courseenrollment` ADD PARTITION (dt = '2014-07-01');
             """
         )
         self.assertEquals(query, expected_query)

@@ -105,20 +105,20 @@ class HiveTableTask(WarehouseMixin, OverwriteOutputMixin, HiveQueryTask):
         # Ensure there is exactly one available partition in the table.
         query_format = """
             USE {database_name};
-            DROP TABLE IF EXISTS {table};
-            CREATE EXTERNAL TABLE {table} (
+            DROP TABLE IF EXISTS `{table}`;
+            CREATE EXTERNAL TABLE `{table}` (
                 {col_spec}
             )
-            PARTITIONED BY ({partition.key} STRING)
+            PARTITIONED BY (`{partition.key}` STRING)
             {table_format}
             LOCATION '{location}';
-            ALTER TABLE {table} ADD PARTITION ({partition.query_spec});
+            ALTER TABLE `{table}` ADD PARTITION ({partition.query_spec});
         """
 
         query = query_format.format(
             database_name=hive_database_name(),
             table=self.table,
-            col_spec=','.join([' '.join(c) for c in self.columns]),
+            col_spec=','.join(['`{}` {}'.format(name, col_type) for name, col_type in self.columns]),
             location=self.table_location,
             table_format=self.table_format,
             partition=self.partition,
@@ -191,17 +191,17 @@ class BareHiveTableTask(WarehouseMixin, OverwriteOutputMixin, HiveQueryTask):
     def query(self):
         partition_clause = ''
         if self.partition_by:
-            partition_clause = 'PARTITIONED BY ({partition_by} STRING)'.format(partition_by=self.partition_by)
+            partition_clause = 'PARTITIONED BY (`{partition_by}` STRING)'.format(partition_by=self.partition_by)
 
         if self.overwrite:
-            drop_on_overwrite = 'DROP TABLE IF EXISTS {table};'.format(table=self.table)
+            drop_on_overwrite = 'DROP TABLE IF EXISTS `{table}`;'.format(table=self.table)
         else:
             drop_on_overwrite = ''
 
         query_format = """
             USE {database_name};
             {drop_on_overwrite}
-            CREATE EXTERNAL TABLE IF NOT EXISTS {table} (
+            CREATE EXTERNAL TABLE IF NOT EXISTS `{table}` (
                 {col_spec}
             )
             {partition_clause}
@@ -212,7 +212,7 @@ class BareHiveTableTask(WarehouseMixin, OverwriteOutputMixin, HiveQueryTask):
         query = query_format.format(
             database_name=hive_database_name(),
             table=self.table,
-            col_spec=','.join([' '.join(c) for c in self.columns]),
+            col_spec=','.join(['`{}` {}'.format(name, col_type) for name, col_type in self.columns]),
             location=self.table_location,
             table_format=self.table_format,
             partition_clause=partition_clause,
@@ -281,7 +281,7 @@ class HivePartitionTask(WarehouseMixin, OverwriteOutputMixin, HiveQueryTask):
 
     def query(self):
         if self.overwrite:
-            drop_on_overwrite = 'ALTER TABLE {table} DROP IF EXISTS PARTITION ({partition.query_spec});'.format(
+            drop_on_overwrite = 'ALTER TABLE `{table}` DROP IF EXISTS PARTITION ({partition.query_spec});'.format(
                 table=self.hive_table_task.table,
                 partition=self.partition
             )
@@ -291,7 +291,7 @@ class HivePartitionTask(WarehouseMixin, OverwriteOutputMixin, HiveQueryTask):
         query_format = """
             USE {database_name};
             {drop_on_overwrite}
-            ALTER TABLE {table} ADD IF NOT EXISTS PARTITION ({partition.query_spec});
+            ALTER TABLE `{table}` ADD IF NOT EXISTS PARTITION ({partition.query_spec});
         """
 
         query = query_format.format(
@@ -371,7 +371,7 @@ class HivePartition(object):
     @property
     def query_spec(self):
         """This format is used when a partition needs to be referred to in a query"""
-        return "{key}='{value}'".format(
+        return "`{key}`='{value}'".format(
             key=self.key,
             value=self.value,
         )
@@ -402,7 +402,7 @@ class HiveTableFromQueryTask(HiveTableTask):  # pylint: disable=abstract-method
     def query(self):
         create_table_statements = super(HiveTableFromQueryTask, self).query()
         full_insert_query = """
-            INSERT INTO TABLE {table}
+            INSERT INTO TABLE `{table}`
             PARTITION ({partition.query_spec})
             {insert_query}
         """.format(

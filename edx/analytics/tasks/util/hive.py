@@ -23,12 +23,12 @@ def hive_database_name():
 
 def hive_version():
     """
-    Returns the version of Hive that is declared in the configuration file. Defaults to 0.11 if it's not specified.
+    Returns the version of Hive that is declared in the configuration file. Defaults to 1.0 if it's not specified.
 
     Returns: A tuple with each index representing a part of the version. For example: version="0.11.0.1" would return
     (0, 11, 0, 1). The 0 indexed integer is the most significant part of the version number.
     """
-    version_str = luigi.configuration.get_config().get('hive', 'version', '0.11')
+    version_str = luigi.configuration.get_config().get('hive', 'version', '1.0')
     return tuple([int(x) for x in version_str.split('.')])
 
 
